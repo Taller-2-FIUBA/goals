@@ -1,12 +1,14 @@
 """Requests handlers."""
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from environ import to_config
 from prometheus_client import start_http_server, Counter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from goals.config import AppConfig
-from goals.database.crud import create_goal, get_all_goals
+from goals.database.crud import create_goal, \
+    get_user_goals, add_goal, get_goal_by_id
 from goals.database.models import Base
 from goals.database.initialization import get_database_url
 from goals.schemas import GoalBase
@@ -35,11 +37,25 @@ def get_db() -> Session:
 async def new_goal(goal: GoalBase, session: Session = Depends(get_db)):
     """Create a new goal."""
     with session as open_session:
-        return create_goal(session=open_session, goal=goal)
+        _id = create_goal(session=open_session, goal=goal)
+        return JSONResponse(content={"goal_id": _id}, status_code=200)
 
 
-@app.get(BASE_URI)
-async def get_goals(session: Session = Depends(get_db)):
+@app.post(BASE_URI + "/{user_id}")
+async def add_goal_for_user(user_id: str, goal_id: int,
+                            session: Session = Depends(get_db)):
+    """Create a new goal for user_id."""
+    with session as open_session:
+        goal = get_goal_by_id(open_session, goal_id=goal_id)
+        if goal is None:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        return add_goal(session=open_session,
+                        user_id=user_id, goal_id=goal_id)
+
+
+@app.get(BASE_URI + "/{user_id}")
+async def get_goals(user_id: str,
+                    session: Session = Depends(get_db)):
     """Return all goals in database."""
     with session as open_session:
-        return get_all_goals(session=open_session)
+        return get_user_goals(session=open_session, user_id=user_id)

@@ -10,6 +10,7 @@ class GoalBase(BaseModel):
     description: str
     metric: str
     objective: int
+    unit: str
     time_limit: str
 
 

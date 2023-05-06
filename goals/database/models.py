@@ -11,15 +11,17 @@ Base = declarative_base()
 class UserGoals(Base):
     """Table structure for user goals."""
 
-    __tablename__ = "user goals"
-    user_id = Column(Integer, primary_key=True, autoincrement=True)
-    goal_id: Mapped[int] = mapped_column(ForeignKey("goals.id"))
+    __tablename__ = "user_goals"
+    user_id = Column(String, primary_key=True, autoincrement=False)
+    goal_id: Mapped[int] = mapped_column(ForeignKey("goals.id"),
+                                         primary_key=True)
+    value = Column(Integer)
 
     # Relationships
     type: Mapped["Goals"] = relationship(lazy="joined")
 
     def __repr__(self):
-        return f"<User goals {self.id}>"
+        return f"<User goals {self.user_id, self.goal_id}>"
 
 
 class Goals(Base):
@@ -31,6 +33,7 @@ class Goals(Base):
     title = Column(String)
     metric = Column(String)
     objective = Column(Integer)
+    unit = Column(String)
     time_limit = Column(String)
 
     def __repr__(self):

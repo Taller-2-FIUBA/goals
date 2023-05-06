@@ -19,10 +19,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -f dev-requirements.txt -r requirements.txt
+          pip install -r dev-requirements.txt -r requirements.txt
       - name: Lint
         run: |
           tox -e lint
       - name: Test
         run: |
           tox -e testenv
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from goals.config import AppConfig
 from goals.database.crud import create_goal, \
-    get_user_goals, add_goal, get_goal_by_id
+    get_user_goals, add_goal, get_goal_by_id, get_all_metrics
 from goals.database.models import Base
 from goals.database.initialization import get_database_url
 from goals.schemas import GoalBase
@@ -51,6 +51,13 @@ async def add_goal_for_user(user_id: str, goal_id: int,
             raise HTTPException(status_code=404, detail="Goal not found")
         return add_goal(session=open_session,
                         user_id=user_id, goal_id=goal_id)
+
+
+@app.get(BASE_URI + "/metrics")
+async def get_metrics(session: Session = Depends(get_db)):
+    """Return all metrics in database."""
+    with session as open_session:
+        return get_all_metrics(open_session)
 
 
 @app.get(BASE_URI + "/{user_id}")

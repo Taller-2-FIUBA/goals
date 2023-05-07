@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from goals.database.data import initialize_db
 from goals.main import app, get_db, BASE_URI
 from goals.database.models import Base
 from tests.test_constants import goal_2, goal_3, goal_1, equal_dicts
@@ -30,6 +31,7 @@ def override_get_db():
 @pytest.fixture
 def test_db():
     Base.metadata.create_all(bind=engine)
+    initialize_db(TestingSessionLocal())
     yield
     Base.metadata.drop_all(bind=engine)
 
@@ -75,4 +77,10 @@ def test_can_get_goal_with_user_id(test_db):
     assert get_response.status_code == 200
     dict2 = goal_1
     dict2.update({"value": 0})
-    assert equal_dicts(get_response.json()[0], dict2, {"id", })
+    assert equal_dicts(get_response.json()[0], dict2, {"id", "unit"})
+
+
+def test_can_get_available_metrics(test_db):
+    get_response = client.get(BASE_URI + "/metrics")
+    assert get_response.status_code == 200
+    assert len(get_response.json()) == 4

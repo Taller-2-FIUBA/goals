@@ -3,27 +3,24 @@
 goal_1 = {
     "title": "Caminata diaria",
     "description": "Caminar tantos kilometros por dia",
-    "metric": "walk",
+    "metric": "distance",
     "objective": 3,
-    "unit": "km",
     "time_limit": "6/5/2023"
 }
 
 goal_2 = {
     "title": "Perdida de grasa",
     "description": "Perder grasa en un mes",
-    "metric": "lose fat",
+    "metric": "fat",
     "objective": 10,
-    "unit": "kg",
     "time_limit": "6/5/2023"
 }
 
 goal_3 = {
     "title": "Ganar musculo",
     "description": "Ganar ciertos kilos de musculo",
-    "metric": "gain muscle",
+    "metric": "muscle",
     "objective": 15,
-    "unit": "kg",
     "time_limit": "6/5/2023"
 }
 

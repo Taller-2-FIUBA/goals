@@ -31,10 +31,20 @@ class Goals(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     description = Column(String)
     title = Column(String)
-    metric = Column(String)
+    metric = Column(String, ForeignKey("metrics.name"), nullable=False)
     objective = Column(Integer)
-    unit = Column(String)
     time_limit = Column(String)
 
     def __repr__(self):
         return f"<Goal {self.id, self.title}>"
+
+
+class Metrics(Base):
+    """Table structure for all pre-determined metrics."""
+
+    __tablename__ = "metrics"
+    name = Column(String, primary_key=True, autoincrement=False)
+    unit = Column(String)
+
+    def __repr__(self):
+        return f"<Goal {self.name, self.unit}>"

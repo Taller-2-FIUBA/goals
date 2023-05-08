@@ -17,11 +17,27 @@ goal_2 = {
 }
 
 goal_3 = {
-    "title": "Ganar musculo",
-    "description": "Ganar ciertos kilos de musculo",
+    "title": "Ganar musculo en un mes",
+    "description": "Ganar musculo en un mes",
     "metric": "muscle",
-    "objective": 15,
+    "objective": 10,
     "time_limit": "6/5/2023"
+}
+
+new_goal_3 = {
+    "objective": 20,
+    "progress": 5,
+    "time_limit": "8/9/2023"
+}
+
+updated_goal_3 = {
+    "title": "Ganar musculo en un mes",
+    "description": "Ganar musculo en un mes",
+    "metric": "muscle",
+    "unit": "kg",
+    "objective": 20,
+    "progress": 5,
+    "time_limit": "8/9/2023"
 }
 
 

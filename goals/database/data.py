@@ -17,9 +17,8 @@ def insert_new_metrics(session: Session):
     """Prepare fixed metrics for loading in database."""
     new_metrics = [
         Metrics(name="distance", unit="km"),
-        Metrics(name="steps", unit=""),
+        Metrics(name="muscle", unit="kg"),
         Metrics(name="fat", unit="kg"),
-        Metrics(name="muscle", unit="kg")
     ]
     _insert(session, new_metrics)
 

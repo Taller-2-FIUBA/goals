@@ -7,6 +7,6 @@ RUN pip install pip --upgrade
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install -e .
 
-WORKDIR /user/src/goals/goals
+WORKDIR /user/src/goals
 
-ENTRYPOINT [ "uvicorn", "main:app", "--port=80", "--reload" ]
+CMD ["uvicorn", "goals.main:app", "--host", "0.0.0.0", "--port", "8004"]

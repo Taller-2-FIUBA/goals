@@ -16,10 +16,10 @@ class AppConfig:
         driver = var("postgresql")
         password = var("postgres")
         user = var("postgres")
-        host = var("goals_db")
+        host = var("user_db")
         port = var(5432, converter=int)
         database = var("postgres")
-        create_structures = var(False, converter=bool)
+        create_structures = var(True, converter=bool)
 
     @config
     class AUTH:
@@ -31,7 +31,7 @@ class AppConfig:
     class TEST:
         """Test configurations."""
 
-        is_testing = var(True, converter=bool)
+        is_testing = var(False, converter=bool)
         id = var("test_user_id")
         role = var("admin")
 

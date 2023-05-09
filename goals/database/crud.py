@@ -20,7 +20,7 @@ def get_user_goals(session: Session, user_id: str):
     """Return goals for user specified by user_id."""
     user_goals = []
     query = session.query(Goals, Metrics)
-    q_filter = query.join(Goals).filter(Goals.metric == Metrics.name)\
+    q_filter = query.join(Goals).filter(Goals.metric == Metrics.name) \
         .filter(Goals.user_id == user_id)
     for goals, metrics in q_filter:
         user_goals.append({"id": goals.id,
@@ -57,3 +57,11 @@ def update_goal(session: Session, goal_id: int, details: GoalUpdate):
 def get_all_metrics(session: Session):
     """Return all available metrics."""
     return session.query(Metrics).all()
+
+
+def correct_user_id(session: Session, goal_id: int, _id: int):
+    """Return all available metrics."""
+    goal = session.query(Goals).filter(Goals.id == goal_id).first()
+    if goal.user_id == _id:
+        return True
+    return False

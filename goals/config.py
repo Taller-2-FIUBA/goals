@@ -21,4 +21,20 @@ class AppConfig:
         database = var("postgres")
         create_structures = var(False, converter=bool)
 
+    @config
+    class AUTH:
+        """Authentication service configuration."""
+
+        host = var("auth-svc")
+
+    @config
+    class TEST:
+        """Test configurations."""
+
+        is_testing = var(True, converter=bool)
+        id = var("test_user_id")
+        role = var("admin")
+
     db = group(DB)  # type: ignore
+    auth = group(AUTH)  # type: ignore
+    test = group(TEST)  # type: ignore

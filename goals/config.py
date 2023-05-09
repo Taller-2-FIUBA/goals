@@ -1,5 +1,11 @@
 """Application configuration."""
+import os
+
 from environ import config, var, group
+
+TESTING = False
+if "TESTING" in os.environ:
+    TESTING = True
 
 
 @config(prefix="GOALS")
@@ -19,7 +25,7 @@ class AppConfig:
         host = var("user_db")
         port = var(5432, converter=int)
         database = var("postgres")
-        create_structures = var(True, converter=bool)
+        create_structures = var(not TESTING, converter=bool)
 
     @config
     class AUTH:
@@ -31,7 +37,7 @@ class AppConfig:
     class TEST:
         """Test configurations."""
 
-        is_testing = var(False, converter=bool)
+        is_testing = var(TESTING, converter=bool)
         id = var("test_user_id")
         role = var("admin")
 

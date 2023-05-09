@@ -1,6 +1,7 @@
 # pylint: disable= missing-module-docstring, missing-function-docstring
 # pylint: disable= unused-argument, redefined-outer-name
 import pytest
+
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -31,7 +32,6 @@ def override_get_db():
 
 @pytest.fixture
 def test_db():
-    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     initialize_db(TestingSessionLocal())
     yield

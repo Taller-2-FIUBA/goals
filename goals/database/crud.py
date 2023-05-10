@@ -5,7 +5,7 @@ from goals.schemas import GoalBase, GoalUpdate
 
 
 def create_goal(session: Session, goal: GoalBase, user_id: str):
-    """Create a new user in the users table, using the id as primary key."""
+    """Create a new user in the goals table, using the id as primary key."""
     new_goal = Goals(title=goal.title, description=goal.description,
                      metric=goal.metric, objective=goal.objective,
                      time_limit=goal.time_limit, user_id=user_id,

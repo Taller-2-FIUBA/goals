@@ -22,6 +22,9 @@ spec:
       - name: goals
         image: marianocinalli/goals:v0.0.1
         imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: goals-configuration
         ports:
           - containerPort: 8004
             name: http-goals

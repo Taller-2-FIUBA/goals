@@ -25,7 +25,7 @@ class AppConfig:
         host = var("user_db")
         port = var(5432, converter=int)
         database = var("postgres")
-        create_structures = var(not TESTING, converter=bool)
+        create_structures = var(False, converter=bool)
 
     @config
     class AUTH:
@@ -37,8 +37,8 @@ class AppConfig:
     class TEST:
         """Test configurations."""
 
-        is_testing = var(TESTING, converter=bool)
-        id = var("test_user_id")
+        is_testing = var(True, converter=bool)
+        id = var(1, converter=int)
         role = var("admin")
 
     db = group(DB)  # type: ignore

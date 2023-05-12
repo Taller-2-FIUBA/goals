@@ -40,7 +40,7 @@ if CONFIGURATION.db.create_structures:
 
 @app.post(BASE_URI + "/{user_id}")
 async def add_goal_for_user(request: Request,
-                            goal: GoalBase, user_id: str,
+                            goal: GoalBase, user_id: int,
                             session: Session = Depends(get_db)):
     """Create a new goal for user_id."""
     creds = await get_credentials(request)
@@ -63,7 +63,7 @@ async def get_metrics(request: Request,
 
 
 @app.get(BASE_URI + "/{user_id}")
-async def get_goals(request: Request, user_id: str,
+async def get_goals(request: Request, user_id: int,
                     session: Session = Depends(get_db)):
     """Return all goals in database."""
     creds = await get_credentials(request)

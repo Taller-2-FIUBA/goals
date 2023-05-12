@@ -13,7 +13,7 @@ class Goals(Base):
 
     __tablename__ = "goals"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id = Column(String)
+    user_id = Column(Integer)
     description = Column(String)
     title = Column(String)
     metric = Column(String, ForeignKey("metrics.name"), nullable=False)

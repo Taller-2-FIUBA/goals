@@ -4,7 +4,7 @@ from goals.database.models import Goals, Metrics
 from goals.schemas import GoalBase, GoalUpdate
 
 
-def create_goal(session: Session, goal: GoalBase, user_id: str):
+def create_goal(session: Session, goal: GoalBase, user_id: int):
     """Create a new user in the goals table, using the id as primary key."""
     new_goal = Goals(title=goal.title, description=goal.description,
                      metric=goal.metric, objective=goal.objective,
@@ -16,7 +16,7 @@ def create_goal(session: Session, goal: GoalBase, user_id: str):
     return new_goal.id
 
 
-def get_user_goals(session: Session, user_id: str):
+def get_user_goals(session: Session, user_id: int):
     """Return goals for user specified by user_id."""
     user_goals = []
     query = session.query(Goals, Metrics)

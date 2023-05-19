@@ -1,4 +1,6 @@
 """Utility methods."""
+import os
+
 import httpx
 from environ import to_config
 
@@ -19,7 +21,7 @@ def get_auth_header(request):
 
 async def get_credentials(request: Request):
     """Make a request to auth service for credentials encoded in token."""
-    if CONFIGURATION.test.is_testing is True:
+    if "TESTING" in os.environ:
         return {
             "role": CONFIGURATION.test.role,
             "id": CONFIGURATION.test.id

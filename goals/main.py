@@ -1,4 +1,6 @@
 """Requests handlers."""
+import os
+
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from environ import to_config
@@ -32,7 +34,7 @@ def get_db() -> Session:
 
 
 ENGINE = create_engine(get_database_url(CONFIGURATION))
-if CONFIGURATION.db.create_structures:
+if "TESTING" not in os.environ:
     Base.metadata.drop_all(bind=ENGINE)
     Base.metadata.create_all(bind=ENGINE)
     initialize_db(get_db())

@@ -1,5 +1,6 @@
 # pylint: disable= missing-module-docstring, missing-function-docstring
 # pylint: disable= unused-argument, redefined-outer-name
+from unittest.mock import patch
 import pytest
 
 from fastapi.testclient import TestClient
@@ -7,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from goals.database.data import initialize_db
-from goals.main import app, get_db, BASE_URI
+from goals.main import app, get_db, BASE_URI, CONFIGURATION
 from goals.database.models import Base
 from tests.test_constants import goal_2, goal_3, goal_1, \
     equal_dicts, new_goal_3, updated_goal_3
@@ -20,6 +21,9 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine
 )
+
+admin_token = {"role": CONFIGURATION.test.role,
+               "id": CONFIGURATION.test.id}
 
 
 def override_get_db():
@@ -43,13 +47,17 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
-def test_first_goal_returns_expected_id(test_db):
+@patch('goals.main.get_credentials')
+def test_first_goal_returns_expected_id(token_mock, test_db):
+    token_mock.return_value = admin_token
     response = client.post(BASE_URI + "/1", json=goal_1)
     assert response.status_code == 200
     assert response.json() == 1
 
 
-def test_several_goals_return_expected_ids(test_db):
+@patch('goals.main.get_credentials')
+def test_several_goals_return_expected_ids(token_mock, test_db):
+    token_mock.return_value = admin_token
     post_response_1 = client.post(BASE_URI + "/1", json=goal_1)
     post_response_2 = client.post(BASE_URI + "/1", json=goal_2)
     post_response_3 = client.post(BASE_URI + "/1", json=goal_3)
@@ -58,7 +66,14 @@ def test_several_goals_return_expected_ids(test_db):
     assert post_response_3.json() == 3
 
 
-def test_can_get_goal_with_user_id(test_db):
+@patch('goals.main.download_image')
+@patch('goals.main.upload_image')
+@patch('goals.main.get_credentials')
+def test_can_get_goal_with_user_id(token_mock, upload_mock,
+                                   download_mock, test_db):
+    token_mock.return_value = admin_token
+    upload_mock.return_value = None
+    download_mock.return_value = None
     client.post(BASE_URI + "/1", json=goal_1)
     client.post(BASE_URI + "/1?goal_id=1")
     get_response = client.get(BASE_URI + "/1")
@@ -68,18 +83,34 @@ def test_can_get_goal_with_user_id(test_db):
     assert equal_dicts(get_response.json()[0], dict2, {"id", "unit"})
 
 
-def test_can_get_available_metrics(test_db):
+@patch('goals.main.download_image')
+@patch('goals.main.upload_image')
+@patch('goals.main.get_credentials')
+def test_can_get_available_metrics(token_mock, upload_mock,
+                                   download_mock, test_db):
+    token_mock.return_value = admin_token
+    upload_mock.return_value = None
+    download_mock.return_value = None
     get_response = client.get(BASE_URI + "/metrics")
     assert get_response.status_code == 200
     assert len(get_response.json()) == 3
 
 
-def test_cant_delete_nonexistent_goal(test_db):
+@patch('goals.main.get_credentials')
+def test_cant_delete_nonexistent_goal(token_mock, test_db):
+    token_mock.return_value = admin_token
     delete = client.delete(BASE_URI + "/32")
     assert delete.status_code == 404
 
 
-def test_can_delete_existent_goal(test_db):
+@patch('goals.main.download_image')
+@patch('goals.main.upload_image')
+@patch('goals.main.get_credentials')
+def test_can_delete_existent_goal(token_mock, upload_mock,
+                                  download_mock, test_db):
+    token_mock.return_value = admin_token
+    upload_mock.return_value = None
+    download_mock.return_value = None
     post_response = client.post(BASE_URI + "/1", json=goal_1)
     _id = post_response.json()
     delete = client.delete(BASE_URI + "/" + str(_id))
@@ -88,7 +119,14 @@ def test_can_delete_existent_goal(test_db):
     assert get_response.json() == []
 
 
-def test_modified_goal_returns_expected_data(test_db):
+@patch('goals.main.download_image')
+@patch('goals.main.upload_image')
+@patch('goals.main.get_credentials')
+def test_modified_goal_returns_expected_data(token_mock, upload_mock,
+                                             download_mock, test_db):
+    token_mock.return_value = admin_token
+    upload_mock.return_value = None
+    download_mock.return_value = None
     post_response = client.post(BASE_URI + "/1", json=goal_3)
     _id = post_response.json()
     client.patch(BASE_URI + "/" + str(_id), json=new_goal_3)

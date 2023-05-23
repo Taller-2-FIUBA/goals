@@ -1,5 +1,4 @@
 """Utility methods."""
-import os
 
 import httpx
 from environ import to_config
@@ -21,11 +20,6 @@ def get_auth_header(request):
 
 async def get_credentials(request: Request):
     """Make a request to auth service for credentials encoded in token."""
-    if "TESTING" in os.environ:
-        return {
-            "role": CONFIGURATION.test.role,
-            "id": CONFIGURATION.test.id
-        }
     url = f"http://{CONFIGURATION.auth.host}/auth/credentials"
     auth_header = get_auth_header(request)
     if auth_header is None:
@@ -50,8 +44,6 @@ def get_name(user_id, goal_id):
 async def upload_image(image: str, user_id: int, goal_id: int):
     """Upload image to auth service."""
     filename = get_name(user_id, goal_id)
-    if "TESTING" in os.environ:
-        return
     url = f"http://{CONFIGURATION.auth.host}/auth/storage/" + filename
     body = {
         "image": image
@@ -64,8 +56,6 @@ async def upload_image(image: str, user_id: int, goal_id: int):
 
 async def download_image(user_id: int, goal_id: int):
     """Download image from auth service."""
-    if "TESTING" in os.environ:
-        return None
     filename = get_name(user_id, goal_id)
     url = f"http://{CONFIGURATION.auth.host}/auth/storage/" + filename
     res = await httpx.AsyncClient().get(url)

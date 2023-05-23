@@ -13,6 +13,7 @@ class GoalBase(BaseModel):
     metric: str
     objective: int
     time_limit: str
+    image: Optional[str]
 
 
 class GoalUpdate(BaseModel):

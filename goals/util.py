@@ -40,3 +40,35 @@ async def get_credentials(request: Request):
         msg = "Token format error"
         raise HTTPException(status_code=403,
                             detail=msg) from json_exception
+
+
+def get_name(user_id, goal_id):
+    """Create name with which the image will be stored in Firebase."""
+    return "user" + str(user_id) + "goal" + str(goal_id)
+
+
+async def upload_image(image: str, user_id: int, goal_id: int):
+    """Upload image to auth service."""
+    filename = get_name(user_id, goal_id)
+    if "TESTING" in os.environ:
+        return
+    url = f"http://{CONFIGURATION.auth.host}/auth/storage/" + filename
+    body = {
+        "image": image
+    }
+    res = await httpx.AsyncClient().post(url, json=body)
+    if res.status_code != 200:
+        raise HTTPException(status_code=res.status_code,
+                            detail=res.json()["Message"])
+
+
+async def download_image(user_id: int, goal_id: int):
+    """Download image from auth service."""
+    if "TESTING" in os.environ:
+        return None
+    filename = get_name(user_id, goal_id)
+    url = f"http://{CONFIGURATION.auth.host}/auth/storage/" + filename
+    res = await httpx.AsyncClient().get(url)
+    if res.status_code != 200:
+        return None
+    return res.json()

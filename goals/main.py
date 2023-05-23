@@ -15,7 +15,7 @@ from goals.database.data import initialize_db
 from goals.database.models import Base
 from goals.database.initialization import get_database_url
 from goals.schemas import GoalBase, GoalUpdate
-from goals.util import get_credentials
+from goals.util import get_credentials, upload_image, download_image
 
 BASE_URI = "/goals"
 
@@ -46,11 +46,13 @@ async def add_goal_for_user(request: Request,
                             session: Session = Depends(get_db)):
     """Create a new goal for user_id."""
     creds = await get_credentials(request)
-    if creds["id"] != user_id:
+    if int(creds["id"]) != user_id:
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
-        _id = create_goal(session=open_session, goal=goal, user_id=user_id)
-        return _id
+        goal_id = create_goal(session=open_session, goal=goal, user_id=user_id)
+        if goal.image:
+            await upload_image(goal.image, user_id, goal_id)
+        return goal_id
 
 
 @app.get(BASE_URI + "/metrics")
@@ -69,10 +71,15 @@ async def get_goals(request: Request, user_id: int,
                     session: Session = Depends(get_db)):
     """Return all goals in database."""
     creds = await get_credentials(request)
-    if creds["id"] != user_id:
+    if int(creds["id"]) != user_id:
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
-        return get_user_goals(session=open_session, user_id=user_id)
+        user_goals = get_user_goals(session=open_session, user_id=user_id)
+        for _idx, user_goal in enumerate(user_goals):
+            image = await download_image(user_id, user_goal["id"])
+            if image:
+                user_goal.update(image)
+        return user_goals
 
 
 @app.delete(BASE_URI + "/{goal_id}")

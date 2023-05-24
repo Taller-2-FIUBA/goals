@@ -9,6 +9,9 @@ from goals.database.models import Metrics
 def _insert(session, records: List[Any]) -> None:
     """Insert records."""
     for record in records:
+        metric = session.query(Metrics).filter_by(name=record.name).first()
+        if metric is not None:
+            continue
         session.add(record)
     session.commit()
 

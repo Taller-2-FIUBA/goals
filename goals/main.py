@@ -35,7 +35,6 @@ def get_db() -> Session:
 
 ENGINE = create_engine(get_database_url(CONFIGURATION))
 if "TESTING" not in os.environ:
-    Base.metadata.drop_all(bind=ENGINE)
     Base.metadata.create_all(bind=ENGINE)
     initialize_db(get_db())
 
@@ -46,7 +45,7 @@ async def add_goal_for_user(request: Request,
                             session: Session = Depends(get_db)):
     """Create a new goal for user_id."""
     creds = await get_credentials(request)
-    if int(creds["id"]) != user_id:
+    if creds["id"] != user_id:
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
         goal_id = create_goal(session=open_session, goal=goal, user_id=user_id)
@@ -71,7 +70,7 @@ async def get_goals(request: Request, user_id: int,
                     session: Session = Depends(get_db)):
     """Return all goals in database."""
     creds = await get_credentials(request)
-    if int(creds["id"]) != user_id:
+    if creds["id"] != user_id:
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
         user_goals = get_user_goals(session=open_session, user_id=user_id)

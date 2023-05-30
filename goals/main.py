@@ -1,6 +1,7 @@
 """Requests handlers."""
 import os
 
+import sentry_sdk
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from environ import to_config
@@ -25,6 +26,10 @@ REQUEST_COUNTER = Counter(
 
 CONFIGURATION = to_config(AppConfig)
 start_http_server(CONFIGURATION.prometheus_port)
+
+if CONFIGURATION.sentry.enabled:
+    sentry_sdk.init(dsn=CONFIGURATION.sentry.dsn, traces_sample_rate=0.5)
+
 app = FastAPI()
 
 

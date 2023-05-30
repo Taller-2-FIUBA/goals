@@ -6,3 +6,4 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 httpx
+sentry-sdk[fastapi]

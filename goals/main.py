@@ -7,10 +7,11 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.applications import get_swagger_ui_html
 from environ import to_config
-from prometheus_client import start_http_server, Counter
+from prometheus_client import start_http_server
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+import goals.metrics as m
 from goals.config import AppConfig
 from goals.database.crud import create_goal, get_user_goals, get_goal, \
     get_all_metrics, delete_goal, update_goal, correct_user_id
@@ -23,9 +24,6 @@ from goals.util import get_credentials, upload_image, download_image
 
 BASE_URI = "/goals"
 DOCUMENTATION_URI = BASE_URI + "/documentation/"
-REQUEST_COUNTER = Counter(
-    "my_failures", "Description of counter", ["endpoint", "http_verb"]
-)
 CONFIGURATION = to_config(AppConfig)
 START = time.time()
 
@@ -56,6 +54,7 @@ async def add_goal_for_user(request: Request,
                             goal: GoalBase, user_id: int,
                             session: Session = Depends(get_db)):
     """Create a new goal for user_id."""
+    m.REQUEST_COUNTER.labels(BASE_URI + "/{user_id}", "post").inc()
     creds = await get_credentials(request)
     if creds["id"] != user_id:
         raise HTTPException(status_code=403, detail="Invalid credentials")
@@ -70,6 +69,7 @@ async def add_goal_for_user(request: Request,
 async def get_metrics(request: Request,
                       session: Session = Depends(get_db)):
     """Return all metrics in database."""
+    m.REQUEST_COUNTER.labels(BASE_URI + "/metrics", "get").inc()
     creds = await get_credentials(request)
     if not creds["role"] == "admin" and not creds["role"] == "user":
         raise HTTPException(status_code=403, detail="Invalid credentials")
@@ -81,6 +81,7 @@ async def get_metrics(request: Request,
 async def get_goals(request: Request, user_id: int,
                     session: Session = Depends(get_db)):
     """Return all goals in database."""
+    m.REQUEST_COUNTER.labels(BASE_URI + "/{user_id}", "get").inc()
     creds = await get_credentials(request)
     if creds["id"] != user_id:
         raise HTTPException(status_code=403, detail="Invalid credentials")
@@ -97,6 +98,7 @@ async def get_goals(request: Request, user_id: int,
 async def delete_user_goal(request: Request,
                            goal_id: int, session: Session = Depends(get_db)):
     """Delete goal with goal_id."""
+    m.REQUEST_COUNTER.labels(BASE_URI + "/{goal_id}", "delete").inc()
     creds = await get_credentials(request)
     if get_goal(session, goal_id) is None:
         raise HTTPException(status_code=404, detail="No such goal")
@@ -110,6 +112,7 @@ async def delete_user_goal(request: Request,
 async def _update_goal(request: Request, goal_update: GoalUpdate,
                        goal_id: int, session: Session = Depends(get_db)):
     """Update goal with goal_id."""
+    m.REQUEST_COUNTER.labels(BASE_URI + "/{goal_id}", "patch").inc()
     creds = await get_credentials(request)
     if get_goal(session, goal_id) is None:
         raise HTTPException(status_code=404, detail="No such goal")

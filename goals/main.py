@@ -153,5 +153,5 @@ async def custom_swagger_ui_html(req: Request):
     openapi_url = root_path + app.openapi_url
     return get_swagger_ui_html(
         openapi_url=openapi_url,
-        title="FIUFIT Trainings",
+        title="FIUFIT goals",
     )

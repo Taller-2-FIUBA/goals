@@ -1,5 +1,6 @@
 """Requests handlers."""
 import os
+import time
 
 import sentry_sdk
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -15,16 +16,17 @@ from goals.database.crud import create_goal, get_user_goals, get_goal, \
 from goals.database.data import initialize_db
 from goals.database.models import Base
 from goals.database.initialization import get_database_url
+from goals.healthcheck import HealthCheckDto
 from goals.schemas import GoalBase, GoalUpdate
 from goals.util import get_credentials, upload_image, download_image
 
 BASE_URI = "/goals"
-
 REQUEST_COUNTER = Counter(
     "my_failures", "Description of counter", ["endpoint", "http_verb"]
 )
-
 CONFIGURATION = to_config(AppConfig)
+START = time.time()
+
 start_http_server(CONFIGURATION.prometheus_port)
 
 if CONFIGURATION.sentry.enabled:
@@ -111,3 +113,9 @@ async def _update_goal(request: Request, goal_update: GoalUpdate,
     with session as open_session:
         update_goal(open_session, goal_id, goal_update)
     return JSONResponse(content={}, status_code=200)
+
+
+@app.get(BASE_URI + "/healthcheck/")
+async def health_check() -> HealthCheckDto:
+    """Check for how long has the service been running."""
+    return HealthCheckDto(uptime=time.time() - START)

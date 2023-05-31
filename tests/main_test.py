@@ -1,8 +1,9 @@
 # pylint: disable= missing-module-docstring, missing-function-docstring
 # pylint: disable= unused-argument, redefined-outer-name
 from unittest.mock import patch
-import pytest
 
+import pytest
+from hamcrest import assert_that, greater_than
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -132,3 +133,9 @@ def test_modified_goal_returns_expected_data(token_mock, upload_mock,
     client.patch(BASE_URI + "/" + str(_id), json=new_goal_3)
     get_response = client.get(BASE_URI + "/1")
     assert get_response.json()[0] == updated_goal_3 | {"id": _id}
+
+
+def test_when_checking_healthcheck_expect_uptime_greater_than_zero():
+    response = client.get("/goals/healthcheck/")
+    assert response.status_code == 200, response.json()
+    assert_that(response.json()["uptime"], greater_than(0))

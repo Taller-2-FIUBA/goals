@@ -1,4 +1,5 @@
 """Requests handlers."""
+import logging
 import os
 import time
 
@@ -28,6 +29,7 @@ CONFIGURATION = to_config(AppConfig)
 START = time.time()
 
 start_http_server(CONFIGURATION.prometheus_port)
+logging.basicConfig(encoding="utf-8", level=CONFIGURATION.log_level.upper())
 
 if CONFIGURATION.sentry.enabled:
     sentry_sdk.init(dsn=CONFIGURATION.sentry.dsn, traces_sample_rate=0.5)
@@ -46,6 +48,7 @@ def get_db() -> Session:
 ENGINE = create_engine(get_database_url(CONFIGURATION))
 if "TESTING" not in os.environ:
     Base.metadata.create_all(bind=ENGINE)
+    logging.info("Initializing database...")
     initialize_db(get_db())
 
 
@@ -55,12 +58,16 @@ async def add_goal_for_user(request: Request,
                             session: Session = Depends(get_db)):
     """Create a new goal for user_id."""
     m.REQUEST_COUNTER.labels(BASE_URI + "/{user_id}", "post").inc()
+    logging.info("Adding goal %s for user %s", goal.__dict__, user_id)
     creds = await get_credentials(request)
     if creds["id"] != user_id:
+        logging.warning("User %s has invalid credentials %s", user_id, creds)
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
+        logging.info("Creating goals...")
         goal_id = create_goal(session=open_session, goal=goal, user_id=user_id)
         if goal.image:
+            logging.info("Uploading goal image...")
             await upload_image(goal.image, user_id, goal_id)
         return goal_id
 
@@ -70,8 +77,10 @@ async def get_metrics(request: Request,
                       session: Session = Depends(get_db)):
     """Return all metrics in database."""
     m.REQUEST_COUNTER.labels(BASE_URI + "/metrics", "get").inc()
+    logging.info("Returning all metrics...")
     creds = await get_credentials(request)
     if not creds["role"] == "admin" and not creds["role"] == "user":
+        logging.warning("User is not authorized to get metrics: %s", creds)
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
         return get_all_metrics(open_session)
@@ -82,12 +91,16 @@ async def get_goals(request: Request, user_id: int,
                     session: Session = Depends(get_db)):
     """Return all goals in database."""
     m.REQUEST_COUNTER.labels(BASE_URI + "/{user_id}", "get").inc()
+    logging.info("Returning all goals...")
     creds = await get_credentials(request)
     if creds["id"] != user_id:
+        logging.warning("User %s has invalid credentials %s", user_id, creds)
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
         user_goals = get_user_goals(session=open_session, user_id=user_id)
+        logging.info("Downloading images for goals...")
         for _idx, user_goal in enumerate(user_goals):
+            logging.debug("Downloading image for goal %s...", user_goal["id"])
             image = await download_image(user_id, user_goal["id"])
             if image:
                 user_goal.update(image)
@@ -99,10 +112,12 @@ async def delete_user_goal(request: Request,
                            goal_id: int, session: Session = Depends(get_db)):
     """Delete goal with goal_id."""
     m.REQUEST_COUNTER.labels(BASE_URI + "/{goal_id}", "delete").inc()
+    logging.info("Deleting goal %s...", goal_id)
     creds = await get_credentials(request)
     if get_goal(session, goal_id) is None:
         raise HTTPException(status_code=404, detail="No such goal")
     if correct_user_id(session, goal_id, creds["id"]) is False:
+        logging.warning("User has invalid credentials %s", creds)
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
         delete_goal(session=open_session, goal_id=goal_id)
@@ -113,10 +128,12 @@ async def _update_goal(request: Request, goal_update: GoalUpdate,
                        goal_id: int, session: Session = Depends(get_db)):
     """Update goal with goal_id."""
     m.REQUEST_COUNTER.labels(BASE_URI + "/{goal_id}", "patch").inc()
+    logging.info("Updating goal %s with %s...", goal_id, goal_update.__dict__)
     creds = await get_credentials(request)
     if get_goal(session, goal_id) is None:
         raise HTTPException(status_code=404, detail="No such goal")
     if correct_user_id(session, goal_id, creds["id"]) is False:
+        logging.warning("User has invalid credentials %s", creds)
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
         update_goal(open_session, goal_id, goal_update)

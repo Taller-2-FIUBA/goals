@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from goals.database.data import initialize_db
-from goals.main import app, get_db, BASE_URI, CONFIGURATION
+from goals.main import DOCUMENTATION_URI, app, get_db, BASE_URI, CONFIGURATION
 from goals.database.models import Base
 from tests.test_constants import goal_2, goal_3, goal_1, \
     equal_dicts, new_goal_3, updated_goal_3
@@ -139,3 +139,13 @@ def test_when_checking_healthcheck_expect_uptime_greater_than_zero():
     response = client.get("/goals/healthcheck/")
     assert response.status_code == 200, response.json()
     assert_that(response.json()["uptime"], greater_than(0))
+
+
+def test_when_getting_swagger_ui_expect_200():
+    response = client.get(DOCUMENTATION_URI)
+    assert response.status_code == 200, response.json()
+
+
+def test_when_getting_openapi_doc_expect_200():
+    response = client.get(DOCUMENTATION_URI + "openapi.json")
+    assert response.status_code == 200, response.json()

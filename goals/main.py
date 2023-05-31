@@ -5,6 +5,7 @@ import time
 import sentry_sdk
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+from fastapi.applications import get_swagger_ui_html
 from environ import to_config
 from prometheus_client import start_http_server, Counter
 from sqlalchemy import create_engine
@@ -21,6 +22,7 @@ from goals.schemas import GoalBase, GoalUpdate
 from goals.util import get_credentials, upload_image, download_image
 
 BASE_URI = "/goals"
+DOCUMENTATION_URI = BASE_URI + "/documentation/"
 REQUEST_COUNTER = Counter(
     "my_failures", "Description of counter", ["endpoint", "http_verb"]
 )
@@ -32,7 +34,10 @@ start_http_server(CONFIGURATION.prometheus_port)
 if CONFIGURATION.sentry.enabled:
     sentry_sdk.init(dsn=CONFIGURATION.sentry.dsn, traces_sample_rate=0.5)
 
-app = FastAPI()
+app = FastAPI(
+    debug=CONFIGURATION.log_level.upper() == "DEBUG",
+    openapi_url=DOCUMENTATION_URI + "openapi.json",
+)
 
 
 def get_db() -> Session:
@@ -119,3 +124,14 @@ async def _update_goal(request: Request, goal_update: GoalUpdate,
 async def health_check() -> HealthCheckDto:
     """Check for how long has the service been running."""
     return HealthCheckDto(uptime=time.time() - START)
+
+
+@app.get(DOCUMENTATION_URI, include_in_schema=False)
+async def custom_swagger_ui_html(req: Request):
+    """To show Swagger with API documentation."""
+    root_path = req.scope.get("root_path", "").rstrip("/")
+    openapi_url = root_path + app.openapi_url
+    return get_swagger_ui_html(
+        openapi_url=openapi_url,
+        title="FIUFIT Trainings",
+    )

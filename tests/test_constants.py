@@ -24,6 +24,14 @@ goal_3 = {
     "time_limit": "6/5/2023"
 }
 
+
+def generate_progress(value):
+    """Return a JSON to use for goal progress updating."""
+    return {
+        "progress": value,
+    }
+
+
 new_goal_3 = {
     "objective": 20,
     "progress": 5,

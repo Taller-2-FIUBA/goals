@@ -2,6 +2,7 @@
 import logging
 import os
 import time
+from typing import Optional
 
 import sentry_sdk
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -15,7 +16,8 @@ from sqlalchemy.orm import Session
 import goals.metrics as m
 from goals.config import AppConfig
 from goals.database.crud import create_goal, get_user_goals, get_goal, \
-    get_all_metrics, delete_goal, update_goal, correct_user_id
+    get_all_metrics, delete_goal, update_goal, correct_user_id, \
+    new_metric_record, get_general_progress
 from goals.database.data import initialize_db
 from goals.database.models import Base
 from goals.database.initialization import get_database_url
@@ -86,6 +88,35 @@ async def get_metrics(request: Request,
         return get_all_metrics(open_session)
 
 
+@app.get(BASE_URI + "/{user_id}/metricsProgress/{metric}")
+async def get_metrics_progress(request: Request,
+                               user_id: int,
+                               metric: str,
+                               session: Session = Depends(get_db),
+                               days: Optional[int] = 7,
+                               ):
+    """Create a new goal for user_id."""
+    url = BASE_URI + "/metricsProgress/{user_id}"
+    m.REQUEST_COUNTER.labels(url, "post").inc()
+    logging.info("Requesting  %s progress for user %s", metric, user_id)
+    creds = await get_credentials(request)
+    if creds["id"] != user_id:
+        logging.warning("User %s has invalid credentials %s", user_id, creds)
+        raise HTTPException(status_code=403, detail="Invalid credentials")
+    with session as open_session:
+        breakdown = get_general_progress(session=open_session,
+                                         metric=metric,
+                                         user_id=user_id,
+                                         days=days)
+        if breakdown is None:
+            raise HTTPException(status_code=404,
+                                detail="No data found on that specific metric")
+        body = {
+            "progress": breakdown
+        }
+        return JSONResponse(content=body, status_code=200)
+
+
 @app.get(BASE_URI + "/{user_id}")
 async def get_goals(request: Request, user_id: int,
                     session: Session = Depends(get_db)):
@@ -136,7 +167,9 @@ async def _update_goal(request: Request, goal_update: GoalUpdate,
         logging.warning("User has invalid credentials %s", creds)
         raise HTTPException(status_code=403, detail="Invalid credentials")
     with session as open_session:
-        update_goal(open_session, goal_id, goal_update)
+        progress_delta = update_goal(open_session, goal_id, goal_update)
+        if goal_update.progress is not None:
+            new_metric_record(open_session, goal_id, progress_delta)
     return JSONResponse(content={}, status_code=200)
 
 

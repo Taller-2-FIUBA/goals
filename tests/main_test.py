@@ -1,5 +1,6 @@
 # pylint: disable= missing-module-docstring, missing-function-docstring
 # pylint: disable= unused-argument, redefined-outer-name
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
@@ -12,7 +13,7 @@ from goals.database.data import initialize_db
 from goals.main import DOCUMENTATION_URI, app, get_db, BASE_URI, CONFIGURATION
 from goals.database.models import Base
 from tests.test_constants import goal_2, goal_3, goal_1, \
-    equal_dicts, new_goal_3, updated_goal_3
+    equal_dicts, new_goal_3, updated_goal_3, generate_progress
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -149,3 +150,100 @@ def test_when_getting_swagger_ui_expect_200():
 def test_when_getting_openapi_doc_expect_200():
     response = client.get(DOCUMENTATION_URI + "openapi.json")
     assert response.status_code == 200, response.json()
+
+
+@patch('goals.main.get_credentials')
+def test_can_get_metrics_correctly_after_one_update(token_mock, test_db):
+    token_mock.return_value = admin_token
+    post_response = client.post(BASE_URI + "/1", json=goal_1)
+    _id = post_response.json()
+    client.patch(BASE_URI + "/" + str(_id), json=generate_progress(5))
+    get_response = client.get(BASE_URI + "/1/metricsProgress/distance?days=1")
+    assert get_response.json() == {"progress": 5}
+
+
+@patch('goals.main.get_credentials')
+def test_can_get_metrics_correctly_after_several_updates(token_mock, test_db):
+    token_mock.return_value = admin_token
+    post_response = client.post(BASE_URI + "/1", json=goal_1)
+    _id = post_response.json()
+    client.patch(BASE_URI + "/" + str(_id), json=generate_progress(5))
+    client.patch(BASE_URI + "/" + str(_id), json=generate_progress(10))
+    client.patch(BASE_URI + "/" + str(_id), json=generate_progress(20))
+    get_response = client.get(BASE_URI + "/1/metricsProgress/distance?days=1")
+    assert get_response.json() == {"progress": 20}
+
+
+@patch('goals.main.get_credentials')
+def test_can_get_several_metrics_correctly_after_updates(token_mock, test_db):
+    token_mock.return_value = admin_token
+    client.post(BASE_URI + "/1", json=goal_1)
+    client.post(BASE_URI + "/1", json=goal_2)
+    client.post(BASE_URI + "/1", json=goal_3)
+    client.patch(BASE_URI + "/1", json=generate_progress(5))
+    client.patch(BASE_URI + "/3", json=generate_progress(20))
+    get_response1 = client.get(BASE_URI + "/1/metricsProgress/distance")
+    get_response2 = client.get(BASE_URI + "/1/metricsProgress/fat")
+    get_response3 = client.get(BASE_URI + "/1/metricsProgress/muscle")
+    assert get_response1.json() == {"progress": 5}
+    assert get_response2.json() == {"progress": 0}
+    assert get_response3.json() == {"progress": 20}
+
+
+@patch('goals.database.crud.current_date')
+@patch('goals.main.get_credentials')
+def test_can_get_several_metrics_for_a_week_correctly(token_mock,
+                                                      datetime_mock,
+                                                      test_db):
+    token_mock.return_value = admin_token
+    client.post(BASE_URI + "/1", json=goal_1)
+    datetime_mock.return_value = datetime(2023, 6, 1)
+    client.patch(BASE_URI + "/1", json=generate_progress(5))
+    datetime_mock.return_value = datetime(2023, 6, 14)
+    client.patch(BASE_URI + "/1", json=generate_progress(15))
+    get_response = client.get(BASE_URI + "/1/metricsProgress/distance")
+    assert get_response.json() == {"progress": 10}
+
+
+@patch('goals.database.crud.current_date')
+@patch('goals.main.get_credentials')
+def test_can_get_several_metrics_for_time_periods_correctly(token_mock,
+                                                            datetime_mock,
+                                                            test_db):
+    token_mock.return_value = admin_token
+    url = BASE_URI + "/1/metricsProgress/distance?"
+    client.post(BASE_URI + "/1", json=goal_1)
+    datetime_mock.return_value = datetime(2023, 6, 1)
+    client.patch(BASE_URI + "/1", json=generate_progress(5))
+    datetime_mock.return_value = datetime(2023, 6, 14)
+    client.patch(BASE_URI + "/1", json=generate_progress(15))
+    get_response1 = client.get(url + "days=14")
+    datetime_mock.return_value = datetime(2023, 6, 16)
+    client.patch(BASE_URI + "/1", json=generate_progress(25))
+    get_response2 = client.get(url + "days=2")
+    datetime_mock.return_value = datetime(2023, 7, 16)
+    client.patch(BASE_URI + "/1", json=generate_progress(50))
+    get_response3 = client.get(url + "days=30")
+    datetime_mock.return_value = datetime(2024, 8, 1)
+    client.patch(BASE_URI + "/1", json=generate_progress(70))
+    get_response4 = client.get(url + "days=365")
+    assert get_response1.json() == {"progress": 15}
+    assert get_response2.json() == {"progress": 20}
+    assert get_response3.json() == {"progress": 35}
+    assert get_response4.json() == {"progress": 20}
+
+
+@patch('goals.database.crud.current_date')
+@patch('goals.main.get_credentials')
+def test_can_get_several_metrics_correctly_after_no_progress(token_mock,
+                                                             datetime_mock,
+                                                             test_db):
+    token_mock.return_value = admin_token
+    client.post(BASE_URI + "/1", json=goal_1)
+    datetime_mock.return_value = datetime(2023, 6, 1)
+    client.patch(BASE_URI + "/1", json=generate_progress(5))
+    datetime_mock.return_value = datetime(2023, 6, 8)
+    client.patch(BASE_URI + "/3", json=generate_progress(20))
+    datetime_mock.return_value = datetime(2023, 7, 30)
+    get_response = client.get(BASE_URI + "/1/metricsProgress/distance?days=30")
+    assert get_response.json() == {"progress": 0}

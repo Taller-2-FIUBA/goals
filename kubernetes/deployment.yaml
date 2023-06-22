@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: goals
-        image: marianocinalli/goals:v0.0.6
+        image: marianocinalli/goals:v0.0.7
         imagePullPolicy: Always
         envFrom:
         - configMapRef:

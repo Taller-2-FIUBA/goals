@@ -22,6 +22,7 @@ def insert_new_metrics(session: Session):
         Metrics(name="distance", unit="km"),
         Metrics(name="muscle", unit="kg"),
         Metrics(name="fat", unit="kg"),
+        Metrics(name="steps", unit="step")
     ]
     _insert(session, new_metrics)
 

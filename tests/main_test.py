@@ -95,7 +95,7 @@ def test_can_get_available_metrics(token_mock, upload_mock,
     download_mock.return_value = None
     get_response = client.get(BASE_URI + "/metrics")
     assert get_response.status_code == 200
-    assert len(get_response.json()) == 3
+    assert len(get_response.json()) == 4
 
 
 @patch('goals.main.get_credentials')

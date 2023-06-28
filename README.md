@@ -1,4 +1,5 @@
 # goals
+[![codecov](https://codecov.io/gh/Taller-2-FIUBA/goals/branch/main/graph/badge.svg?token=bewfhNDORY)](https://codecov.io/gh/Taller-2-FIUBA/goals)
 
 Service for interacting with user goals.
 Keep in mind this service requires the authentication service to function correctly.

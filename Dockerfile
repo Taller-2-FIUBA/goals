@@ -9,4 +9,11 @@ RUN pip install -e .
 
 WORKDIR /user/src/goals
 
-CMD ["uvicorn", "goals.main:app", "--host", "0.0.0.0", "--port", "8004"]
+ENTRYPOINT [\
+    "newrelic-admin",\
+    "run-program",\
+    "uvicorn",\
+    "goals.main:app",\
+    "--host=0.0.0.0",\
+    "--port=8004"\
+]

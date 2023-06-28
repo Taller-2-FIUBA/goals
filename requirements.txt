@@ -1,5 +1,4 @@
 fastapi[all]
-prometheus-client
 environ-config
 pydantic
 uvicorn
@@ -7,3 +6,4 @@ sqlalchemy
 psycopg2-binary
 httpx
 sentry-sdk[fastapi]
+newrelic

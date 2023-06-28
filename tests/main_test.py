@@ -247,3 +247,111 @@ def test_can_get_several_metrics_correctly_after_no_progress(token_mock,
     datetime_mock.return_value = datetime(2023, 7, 30)
     get_response = client.get(BASE_URI + "/1/metricsProgress/distance?days=30")
     assert get_response.json() == {"progress": 0}
+
+
+HEADERS = {
+    "authority": "users-ingress-taller2-marianocinalli.cloud.okteto.net",
+    "accept": "/",
+    "accept-language": "en-US,en;q=0.9,es;q=0.8,pt;q=0.7,la;q=0.6",
+    "access-control-request-headers": "authorization",
+    "access-control-request-method": "patch",
+    "cache-control": "no-cache",
+    "origin": "https://fiufit-backoffice-6kwbytb6g-fiufitgrupo5-gmailcom"
+    ".vercel.app",
+    "pragma": "no-cache",
+    "referer": "http://localhost:3000/",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    "(KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
+}
+
+
+def test_when_asking_cors_is_available_for_patch_expect_200():
+    response = client.options("goals", headers=HEADERS)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_for_patch_uppercase_expect_200():
+    method_override = {"access-control-request-method": "PATCH"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_for_post_expect_200():
+    method_override = {"access-control-request-method": "post"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_for_post_uppercase_expect_200():
+    method_override = {"access-control-request-method": "POST"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_for_banana_expect_400():
+    method_override = {"access-control-request-method": "banana"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 400
+
+
+def test_when_asking_cors_is_available_origin_localhost_expect_200():
+    method_override = {"origin": "localhost"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_localhost_3000_expect_200():
+    method_override = {"origin": "localhost:3000"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_http_localhost_expect_200():
+    method_override = {"origin": "http://localhost"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_https_localhost_expect_200():
+    method_override = {"origin": "https://localhost"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_http_localhost_3000_expect_200():
+    method_override = {"origin": "http://localhost"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_https_localhost_3000_expect_ok():
+    method_override = {"origin": "https://localhost"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_local_expect_200():
+    method_override = {"origin": "local"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_local_3000_expect_200():
+    method_override = {"origin": "local:3000"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_vercel_dev_expect_200():
+    method_override = {"origin": "https://fiufit-backoffice.vercel.app/"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 200
+
+
+def test_when_asking_cors_is_available_origin_apple_expect_200():
+    method_override = {"origin": "apple"}
+    response = client.options("goals", headers=HEADERS | method_override)
+    assert response.status_code == 400

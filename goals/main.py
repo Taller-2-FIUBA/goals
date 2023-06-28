@@ -8,6 +8,7 @@ import sentry_sdk
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.applications import get_swagger_ui_html
+from fastapi.middleware.cors import CORSMiddleware
 from environ import to_config
 from prometheus_client import start_http_server
 from sqlalchemy import create_engine
@@ -29,6 +30,23 @@ BASE_URI = "/goals"
 DOCUMENTATION_URI = BASE_URI + "/documentation/"
 CONFIGURATION = to_config(AppConfig)
 START = time.time()
+METHODS = [
+    "GET",
+    "get",
+    "POST",
+    "post",
+    "PUT",
+    "put",
+    "PATCH",
+    "patch",
+    "OPTIONS",
+    "options",
+    "DELETE",
+    "delete",
+    "HEAD",
+    "head",
+]
+ORIGIN_REGEX = "(http)?(s)?(://)?(.*vercel.app|localhost|local)(:3000)?.*"
 
 start_http_server(CONFIGURATION.prometheus_port)
 logging.basicConfig(encoding="utf-8", level=CONFIGURATION.log_level.upper())
@@ -39,6 +57,13 @@ if CONFIGURATION.sentry.enabled:
 app = FastAPI(
     debug=CONFIGURATION.log_level.upper() == "DEBUG",
     openapi_url=DOCUMENTATION_URI + "openapi.json",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=ORIGIN_REGEX,
+    allow_credentials=True,
+    allow_methods=METHODS,
+    allow_headers=['*']
 )
 
 

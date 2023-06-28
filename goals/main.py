@@ -10,11 +10,13 @@ from fastapi.responses import JSONResponse
 from fastapi.applications import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from environ import to_config
-from prometheus_client import start_http_server
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from newrelic.agent import (
+    record_custom_metric as record_metric,
+    register_application,
+)
 
-import goals.metrics as m
 from goals.config import AppConfig
 from goals.database.crud import create_goal, get_user_goals, get_goal, \
     get_all_metrics, delete_goal, update_goal, correct_user_id, \
@@ -47,8 +49,9 @@ METHODS = [
     "head",
 ]
 ORIGIN_REGEX = "(http)?(s)?(://)?(.*vercel.app|localhost|local)(:3000)?.*"
+NR_APP = register_application()
+COUNTER = {"count": 1}
 
-start_http_server(CONFIGURATION.prometheus_port)
 logging.basicConfig(encoding="utf-8", level=CONFIGURATION.log_level.upper())
 
 if CONFIGURATION.sentry.enabled:
@@ -84,7 +87,7 @@ async def add_goal_for_user(request: Request,
                             goal: GoalBase, user_id: int,
                             session: Session = Depends(get_db)):
     """Create a new goal for user_id."""
-    m.REQUEST_COUNTER.labels(BASE_URI + "/{user_id}", "post").inc()
+    record_metric('Custom/goals-userId/post', COUNTER, NR_APP)
     logging.info("Adding goal %s for user %s", goal.__dict__, user_id)
     creds = await get_credentials(request)
     if creds["id"] != user_id:
@@ -103,7 +106,7 @@ async def add_goal_for_user(request: Request,
 async def get_metrics(request: Request,
                       session: Session = Depends(get_db)):
     """Return all metrics in database."""
-    m.REQUEST_COUNTER.labels(BASE_URI + "/metrics", "get").inc()
+    record_metric('Custom/goals-metrics/get', COUNTER, NR_APP)
     logging.info("Returning all metrics...")
     creds = await get_credentials(request)
     if not creds["role"] == "admin" and not creds["role"] == "user":
@@ -121,8 +124,9 @@ async def get_metrics_progress(request: Request,
                                days: Optional[int] = 7,
                                ):
     """Create a new goal for user_id."""
-    url = BASE_URI + "/metricsProgress/{user_id}"
-    m.REQUEST_COUNTER.labels(url, "post").inc()
+    record_metric(
+        'Custom/goals-userId-metricsProgress-metric/get', COUNTER, NR_APP
+    )
     logging.info("Requesting  %s progress for user %s", metric, user_id)
     creds = await get_credentials(request)
     if creds["id"] != user_id:
@@ -146,7 +150,7 @@ async def get_metrics_progress(request: Request,
 async def get_goals(request: Request, user_id: int,
                     session: Session = Depends(get_db)):
     """Return all goals in database."""
-    m.REQUEST_COUNTER.labels(BASE_URI + "/{user_id}", "get").inc()
+    record_metric('Custom/goals-userId/get', COUNTER, NR_APP)
     logging.info("Returning all goals...")
     creds = await get_credentials(request)
     if creds["id"] != user_id:
@@ -167,7 +171,7 @@ async def get_goals(request: Request, user_id: int,
 async def delete_user_goal(request: Request,
                            goal_id: int, session: Session = Depends(get_db)):
     """Delete goal with goal_id."""
-    m.REQUEST_COUNTER.labels(BASE_URI + "/{goal_id}", "delete").inc()
+    record_metric('Custom/goals-goalId/delete', COUNTER, NR_APP)
     logging.info("Deleting goal %s...", goal_id)
     creds = await get_credentials(request)
     if get_goal(session, goal_id) is None:
@@ -183,7 +187,7 @@ async def delete_user_goal(request: Request,
 async def _update_goal(request: Request, goal_update: GoalUpdate,
                        goal_id: int, session: Session = Depends(get_db)):
     """Update goal with goal_id."""
-    m.REQUEST_COUNTER.labels(BASE_URI + "/{goal_id}", "patch").inc()
+    record_metric('Custom/goals-goalId/patch', COUNTER, NR_APP)
     logging.info("Updating goal %s with %s...", goal_id, goal_update.__dict__)
     creds = await get_credentials(request)
     if get_goal(session, goal_id) is None:
